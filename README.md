@@ -1,6 +1,27 @@
 # Acrolinx .NET SDK Demo
 
-A little demo of the [Acrolinx .NET SDK](https://github.com/acrolinx/sdk-dotnet).
+This is a showcase building an automated [Acrolinx](https://www.acrolinx.com/) Integration using the [Acrolinx .NET SDK](https://github.com/acrolinx/sdk-dotnet).
+
+For integrating the Sidebar see: [Acrolinx .NET Sidebar Demo](https://github.com/acrolinx/acrolinx-sidebar-demo-dotnet).
+
+## Prerequisites
+
+Please contact [Acrolinx SDK support](https://github.com/acrolinx/acrolinx-coding-guidance/blob/master/topics/sdk-support.md)
+for consulting and getting your integration certified.
+The tests in this SDK work with a test license on an internal Acrolinx URL.
+This license is only meant for demonstration and developing purposes.
+Once you finished your integration, you'll have to get a license for your integration from Acrolinx.
+  
+Acrolinx offers different other SDKs, and examples for developing integrations.
+
+Before you start developing your own integration, you might benefit from looking into:
+
+* [Getting Started with Custom Integrations](https://docs.acrolinx.com/customintegrations),
+* the [Guidance for the Development of Acrolinx Integrations](https://github.com/acrolinx/acrolinx-coding-guidance),
+* the [Acrolinx Platform API](https://github.com/acrolinx/platform-api)
+* the [Rendered Version of Acrolinx Platform API](https://acrolinxapi.docs.apiary.io/#)
+* the [Acrolinx SDKs](https://github.com/acrolinx?q=sdk), and
+* the [Acrolinx Demo Projects](https://github.com/acrolinx?q=demo).
 
 ## Run It
 
