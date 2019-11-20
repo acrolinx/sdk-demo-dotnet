@@ -23,7 +23,7 @@ Before you start developing your own integration, you might benefit from looking
 * the [Acrolinx SDKs](https://github.com/acrolinx?q=sdk), and
 * the [Acrolinx Demo Projects](https://github.com/acrolinx?q=demo).
 
-## Run It
+## Run the Sample
 
 1. Open [`Acrolinx.Net.Demo.sln`](Acrolinx.Net.Demo.sln) in Visual Studio 2019. Visual Studio Code with .NET extension can be used as an alternative.
 2. Press F5 key to run it.
