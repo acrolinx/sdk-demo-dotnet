@@ -8,4 +8,4 @@ script:
  - dotnet build
 after_success:
  - ls ./Acrolinx.Net.Demo/bin/Debug/netcoreapp3.0/Acrolinx.Net.Demo
- - ./Acrolinx.Net.Demo/bin/Debug/netcoreapp3.0/Acrolinx.Net.Demo -silent | grep "Acrolinx Scorecard: https://test-ssl.acrolinx.com"
+ - ./Acrolinx.Net.Demo/bin/Debug/netcoreapp3.0/Acrolinx.Net.Demo -silent | grep 'Acrolinx Scorecard: https://test-ssl.acrolinx.com'
