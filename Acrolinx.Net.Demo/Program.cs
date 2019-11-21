@@ -44,7 +44,7 @@ namespace Acrolinx.Net.Demo
             var checkResult = await endpoint.Check(accessToken, checkRequest);
 
             Console.WriteLine($"Check {checkResult.Id}: {checkResult.Quality.Score} ({checkResult.Quality.Status})");
-            Console.WriteLine($"The Acrolinx Scorecard {checkResult.Reports["scorecard"].Link} will open in the default browser...");
+            Console.WriteLine($"Acrolinx Scorecard: {checkResult.Reports["scorecard"].Link}");
 
             return checkResult.Reports["scorecard"].Link;
         }
@@ -59,14 +59,15 @@ namespace Acrolinx.Net.Demo
                     "sdk.net.testuser");
 
                 task.Wait();
-                OpenUrlInDefualtBrowser(task.Result);
+                if (args.Length == 0)
+                {
+                    OpenUrlInDefualtBrowser(task.Result);
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error: {ex.ToString()}");
             }
-            Console.WriteLine("Press return to exit.");
-            Console.ReadLine();
         }
 
         private static void OpenUrlInDefualtBrowser(string url)
@@ -77,7 +78,7 @@ namespace Acrolinx.Net.Demo
                 {
                     UseShellExecute = true
                 };
-
+                Console.WriteLine($"Opening {url} in the default browser...");
                 Process.Start(processStartInfo);
             }
         }
