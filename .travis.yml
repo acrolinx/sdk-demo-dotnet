@@ -1,6 +1,5 @@
 language: csharp
 solution: Acrolinx.Net.Demo.sln
 mono: none
-dotnet: 3.0.0
 script:
  - dotnet restore
