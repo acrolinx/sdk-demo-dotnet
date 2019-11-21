@@ -4,9 +4,9 @@ mono: none
 dotnet: 3.0.100
 install:
  - dotnet restore
-script:
+before_script:
  - dotnet build
-after_success:
+script:
  - ls -s
  - ./Acrolinx.Net.Demo/bin/Debug/netcoreapp3.0/Acrolinx.Net.Demo -silent
  - "./Acrolinx.Net.Demo/bin/Debug/netcoreapp3.0/Acrolinx.Net.Demo -silent | grep 'Acrolinx Scorecard: https://test-ssl.acrolinx.com'"
