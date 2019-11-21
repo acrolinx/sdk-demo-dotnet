@@ -13,69 +13,60 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
- using Acrolinx.Net.Check;
+
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Acrolinx.Net.Check;
 
-namespace Acrolinx.Net.Demo
-{
-    class Program
-    {
-        private async static Task<string> CheckWithAcrolinx(string url, string genericToken, string username)
-        {
-            var endpoint = new AcrolinxEndpoint(url, "SW50ZWdyYXRpb25EZXZlbG9wbWVudERlbW9Pbmx5");
+namespace Acrolinx.Net.Demo {
+    class Program {
+        private async static Task<string> CheckWithAcrolinx (string url, string genericToken, string username) {
+            Debug.Assert (string.IsNullOrWhiteSpace (url), "No Acrolinx URL was provided");
+            Debug.Assert (string.IsNullOrWhiteSpace (genericToken), "No generic SSO token was provided");
+            Debug.Assert (string.IsNullOrWhiteSpace (username), "No username was provided");
+            var endpoint = new AcrolinxEndpoint (url, "SW50ZWdyYXRpb25EZXZlbG9wbWVudERlbW9Pbmx5");
 
-            var accessToken = await endpoint.SignInWithSSO(genericToken, username);
-            var checkRequest = new CheckRequest()
-            {
-                CheckOptions = new CheckOptions()
-                {
-                    CheckType = CheckType.Automated,
-                    ContentFormat = "AUTO"
+            var accessToken = await endpoint.SignInWithSSO (genericToken, username);
+            var checkRequest = new CheckRequest () {
+                CheckOptions = new CheckOptions () {
+                CheckType = CheckType.Automated,
+                ContentFormat = "AUTO"
                 },
-                Document = new DocumentDescriptorRequest(@"c:\demo.net.txt", new System.Collections.Generic.List<CustomField>()),
+                Document = new DocumentDescriptorRequest (@"c:\demo.net.txt", new System.Collections.Generic.List<CustomField> ()),
                 Content = "This is an tesst"
             };
-            var checkResult = await endpoint.Check(accessToken, checkRequest);
+            var checkResult = await endpoint.Check (accessToken, checkRequest);
 
-            Console.WriteLine($"Check {checkResult.Id}: {checkResult.Quality.Score} ({checkResult.Quality.Status})");
-            Console.WriteLine($"The Acrolinx Scorecard {checkResult.Reports["scorecard"].Link} will open in the default browser...");
+            Console.WriteLine ($"Check {checkResult.Id}: {checkResult.Quality.Score} ({checkResult.Quality.Status})");
+            Console.WriteLine ($"The Acrolinx Scorecard {checkResult.Reports["scorecard"].Link} will open in the default browser...");
 
             return checkResult.Reports["scorecard"].Link;
         }
 
-        
-        static void Main(string[] args)
-        {
-            try
-            {
-                var task = CheckWithAcrolinx("https://test-ssl.acrolinx.com",
-                    Environment.GetEnvironmentVariable("ACROLINX_API_SSO_TOKEN"),
+        static void Main (string[] args) {
+            try {
+                string genericToken = Environment.GetEnvironmentVariable ("ACROLINX_API_SSO_TOKEN");
+                var task = CheckWithAcrolinx ("https://test-ssl.acrolinx.com",
+                    genericToken,
                     "sdk.net.testuser");
 
-                task.Wait();
-                OpenUrlInDefualtBrowser(task.Result);
+                task.Wait ();
+                OpenUrlInDefualtBrowser (task.Result);
+            } catch (Exception ex) {
+                Console.WriteLine ($"Error: {ex.ToString()}");
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.ToString()}");
-            }
-            Console.WriteLine("Press return to exit.");
-            Console.ReadLine();
+            Console.WriteLine ("Press return to exit.");
+            Console.ReadLine ();
         }
 
-        private static void OpenUrlInDefualtBrowser(string url)
-        {
-            if (url.StartsWith("https://"))
-            {
-                var processStartInfo = new ProcessStartInfo(url)
-                {
+        private static void OpenUrlInDefualtBrowser (string url) {
+            if (url.StartsWith ("https://")) {
+                var processStartInfo = new ProcessStartInfo (url) {
                     UseShellExecute = true
                 };
 
-                Process.Start(processStartInfo);
+                Process.Start (processStartInfo);
             }
         }
     }
