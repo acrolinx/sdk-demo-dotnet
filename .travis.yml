@@ -9,4 +9,4 @@ before_script:
 script:
  - ls -s
  - ./Acrolinx.Net.Demo/bin/Debug/netcoreapp3.0/Acrolinx.Net.Demo -silent
- - "./Acrolinx.Net.Demo/bin/Debug/netcoreapp3.0/Acrolinx.Net.Demo -silent | grep 'Acrolinx Scorecard: https://test-ssl.acrolinx.com'"
+ - "./Acrolinx.Net.Demo/bin/Debug/netcoreapp3.0/Acrolinx.Net.Demo -silent | grep 'Acrolinx Scorecard: https://test-ssl.acrolinx.com/api/v1/checking/scorecards/'"
