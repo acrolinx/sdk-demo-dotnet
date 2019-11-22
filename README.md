@@ -1,6 +1,6 @@
 # Acrolinx .NET SDK Demo
 
-[![Build Status](https://travis-ci.com/acrolinx/sdk-demo-dotnet.svg?branch=master)](https://travis-ci.com/acrolinx/sdk-demo-dotnet)
+[![Build Status](https://travis-ci.org/acrolinx/sdk-demo-dotnet.svg?branch=master)](https://travis-ci.org/acrolinx/sdk-demo-dotnet)
 
 This is a showcase building an automated [Acrolinx](https://www.acrolinx.com/) Integration using the [Acrolinx .NET SDK](https://github.com/acrolinx/sdk-dotnet).
 
