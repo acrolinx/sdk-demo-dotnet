@@ -33,4 +33,4 @@ jobs:
 
       - name: Build Demo
         shell: powershell
-        run: dotnet build $env:Solution_Name --configuration $env:Configuration -p:Platform="Any CPU"
+        run: dotnet build $env:Solution_Name --configuration Release -p:Platform="Any CPU"
