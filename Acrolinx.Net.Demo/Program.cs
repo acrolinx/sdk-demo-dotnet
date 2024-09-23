@@ -54,7 +54,7 @@ namespace Acrolinx.Net.Demo
             try
             {
                 string genericToken = Environment.GetEnvironmentVariable("ACROLINX_API_SSO_TOKEN");
-                var task = CheckWithAcrolinx("https://test-ssl.acrolinx.com",
+                var task = CheckWithAcrolinx("https://partner-dev.acrolinx.sh",
                     genericToken,
                     "sdk.net.testuser");
 
