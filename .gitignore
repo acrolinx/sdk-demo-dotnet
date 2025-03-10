@@ -170,6 +170,9 @@ rcf/
 AppPackages/
 BundleArtifacts/
 
+# macOS unecessary hidden files
+.DS_Store
+
 # Visual Studio cache files
 # files ending in .cache can be ignored
 *.[Cc]ache
@@ -219,6 +222,7 @@ FakesAssemblies/
 
 # Visual Studio 6 build log
 *.plg
+*.sh
 
 # Visual Studio 6 workspace options file
 *.opt
