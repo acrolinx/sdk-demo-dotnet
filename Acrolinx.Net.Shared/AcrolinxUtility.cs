@@ -19,72 +19,38 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Acrolinx.Net.Check;
+using Microsoft.Extensions.Logging;
 
 namespace Acrolinx.Net.Shared
 {
-    public static class AcrolinxUtility
+    public class AcrolinxService : IAcrolinxService
     {
-        private static readonly string AcrolinxUrl;
-        private static readonly string ApiToken;
-        private static readonly string AcrolinxUsername;
-        private static readonly string ClientSignature;
+        private readonly IAcrolinxConfiguration _configuration;
+        private readonly ILogger<AcrolinxService> _logger;
 
-        // Static constructor: Load configuration from environment variables
-        static AcrolinxUtility()
+        public AcrolinxService(IAcrolinxConfiguration configuration, ILogger<AcrolinxService> logger)
         {
-            AcrolinxUrl = Environment.GetEnvironmentVariable("ACROLINX_URL") ?? string.Empty;
-            ApiToken = Environment.GetEnvironmentVariable("ACROLINX_SSO_TOKEN") ?? string.Empty;
-            AcrolinxUsername = Environment.GetEnvironmentVariable("ACROLINX_USERNAME") ?? string.Empty;
-            ClientSignature = Environment.GetEnvironmentVariable("ACROLINX_CLIENT_SIGNATURE") ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(AcrolinxUrl) ||
-                string.IsNullOrWhiteSpace(ApiToken) ||
-                string.IsNullOrWhiteSpace(AcrolinxUsername) ||
-                string.IsNullOrWhiteSpace(ClientSignature))
-            {
-                Console.WriteLine("ERROR: Missing required environment variables. Ensure ACROLINX_URL, ACROLINX_SSO_TOKEN, ACROLINX_USERNAME, and ACROLINX_CLIENT_SIGNATURE are set.");
-            }
-        }
-
-        /// <summary>
-        /// Retrieves the directory where content files are stored.
-        /// Ensures the directory exists before returning.
-        /// </summary>
-        public static string? GetContentDirectory()
-        {
-            string? contentDir = Environment.GetEnvironmentVariable("ACROLINX_CONTENT_DIR");
-
-            if (string.IsNullOrWhiteSpace(contentDir))
-            {
-                Console.WriteLine("ERROR: ACROLINX_CONTENT_DIR is not set. Please set this environment variable.");
-                return null;
-            }
-
-            if (!Directory.Exists(contentDir))
-            {
-                Console.WriteLine($"ERROR: Specified directory '{contentDir}' does not exist.");
-                return null;
-            }
-
-            return contentDir;
+            _configuration = configuration;
+            _logger = logger;
         }
 
         /// <summary>
         /// Submits the given file to Acrolinx for checking and returns the Scorecard URL.
         /// If in Batch mode, it also returns the Content Analysis Dashboard URL.
         /// </summary>
-        public static async Task<string?> CheckWithAcrolinx(string filePath, string? batchId = null, CheckType checkType = CheckType.Automated)
+        public async Task<string?> CheckWithAcrolinx(string filePath, string? batchId = null, CheckType checkType = CheckType.Automated)
         {
-            if (string.IsNullOrWhiteSpace(AcrolinxUrl) || string.IsNullOrWhiteSpace(ApiToken))
+            if (!_configuration.IsValid)
             {
-                Console.WriteLine("ERROR: Acrolinx configuration missing. Skipping file check.");
+                _logger.LogError("Configuration invalid. Cannot perform Acrolinx check");
+                _configuration.PrintValidationErrors();
                 return null;
             }
 
             // Validate file existence
             if (!File.Exists(filePath))
             {
-                Console.WriteLine($"WARNING: File not found: {filePath}");
+                _logger.LogWarning("File not found: {FilePath}", filePath);
                 return null;
             }
 
@@ -92,20 +58,20 @@ namespace Acrolinx.Net.Shared
             try
             {
                 content = File.ReadAllText(filePath);
-                Console.WriteLine($"Successfully read file: {filePath} (Content length: {content.Length} characters)");
+                _logger.LogInformation("Successfully read file: {FilePath} (Content length: {Length} characters)", filePath, content.Length);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"WARNING: Could not read file {filePath}. Error: {ex.Message}");
+                _logger.LogWarning("Could not read file {FilePath}. Error: {Error}", filePath, ex.Message);
                 return null;
             }
 
             try
             {
-                var endpoint = new AcrolinxEndpoint(AcrolinxUrl, ClientSignature);
-                Console.WriteLine($"Starting check for file: {filePath}");
-                var accessToken = await endpoint.SignInWithSSO(ApiToken, AcrolinxUsername);
-                Console.WriteLine($"Successfully signed in for file: {filePath}");
+                var endpoint = new AcrolinxEndpoint(_configuration.AcrolinxUrl, _configuration.ClientSignature);
+                _logger.LogInformation("Starting check for file: {FilePath}", filePath);
+                var accessToken = await endpoint.SignInWithSSO(_configuration.ApiToken, _configuration.Username);
+                _logger.LogInformation("Successfully signed in for file: {FilePath}", filePath);
 
                 var checkRequest = new CheckRequest()
                 {
@@ -119,25 +85,27 @@ namespace Acrolinx.Net.Shared
                     Content = content
                 };
 
-                Console.WriteLine($"Sending check request for file: {filePath} (Batch ID: {batchId}, Check Type: {checkType})");
+                _logger.LogInformation("Sending check request for file: {FilePath} (Batch ID: {BatchId}, Check Type: {CheckType})", 
+                    filePath, batchId, checkType);
                 var checkResult = await endpoint.Check(accessToken, checkRequest);
-                Console.WriteLine($"Check request completed for file: {filePath}");
+                _logger.LogInformation("Check request completed for file: {FilePath}", filePath);
 
                 if (checkResult == null)
                 {
-                    Console.WriteLine($"WARNING: Check result is null for file: {filePath}");
+                    _logger.LogWarning("Check result is null for file: {FilePath}", filePath);
                     return null;
                 }
 
-                Console.WriteLine($"Check {checkResult.Id} completed for {filePath}: Score {checkResult.Quality.Score} ({checkResult.Quality.Status})");
+                _logger.LogInformation("Check {CheckId} completed for {FilePath}: Score {Score} ({Status})", 
+                    checkResult.Id, filePath, checkResult.Quality.Score, checkResult.Quality.Status);
 
                 string? scorecardUrl = checkResult.Reports.ContainsKey("scorecard") ? checkResult.Reports["scorecard"].Link : null;
-                Console.WriteLine($"Scorecard: {scorecardUrl ?? "Not Available"}");
+                _logger.LogInformation("Scorecard: {ScorecardUrl}", scorecardUrl ?? "Not Available");
 
                 if (checkType == CheckType.Batch && checkResult.Reports.ContainsKey("contentAnalysisDashboard"))
                 {
                     string? dashboardUrl = checkResult.Reports["contentAnalysisDashboard"].Link;
-                    Console.WriteLine($"Content Analysis Dashboard: {dashboardUrl}");
+                    _logger.LogInformation("Content Analysis Dashboard: {DashboardUrl}", dashboardUrl);
                     return dashboardUrl;
                 }
 
@@ -145,7 +113,7 @@ namespace Acrolinx.Net.Shared
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ERROR: Acrolinx check failed for {filePath}. Error: {ex.Message}");
+                _logger.LogError("Acrolinx check failed for {FilePath}. Error: {Error}", filePath, ex.Message);
                 return null;
             }
         }
@@ -153,23 +121,78 @@ namespace Acrolinx.Net.Shared
         /// <summary>
         /// Opens a given URL in the default web browser.
         /// </summary>
-        public static void OpenUrlInBrowser(string? url)
+        public void OpenUrlInBrowser(string? url)
         {
             if (string.IsNullOrWhiteSpace(url) || !url.StartsWith("https://"))
             {
-                Console.WriteLine("WARNING: Invalid URL. Cannot open in browser.");
+                _logger.LogWarning("Invalid URL. Cannot open in browser");
                 return;
             }
 
             try
             {
                 Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
-                Console.WriteLine($"Opening {url} in default browser...");
+                _logger.LogInformation("Opening {Url} in default browser", url);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ERROR: Failed to open browser. {ex.Message}");
+                _logger.LogError("Failed to open browser. {Error}", ex.Message);
             }
+        }
+    }
+
+    // Keep the static utility class for backward compatibility if needed
+    public static class AcrolinxUtility
+    {
+        private static readonly AcrolinxConfiguration Configuration = new AcrolinxConfiguration(
+            Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddConsole())
+                .CreateLogger<AcrolinxConfiguration>()
+        );
+
+        /// <summary>
+        /// Gets the current configuration instance.
+        /// </summary>
+        public static AcrolinxConfiguration GetConfiguration()
+        {
+            return Configuration;
+        }
+
+        /// <summary>
+        /// Retrieves the directory where content files are stored.
+        /// Returns null if directory is not configured or doesn't exist.
+        /// </summary>
+        public static string? GetContentDirectory()
+        {
+            if (!Configuration.IsValid)
+            {
+                Configuration.PrintValidationErrors();
+                return null;
+            }
+
+            return Configuration.ContentDirectory;
+        }
+
+        /// <summary>
+        /// Submits the given file to Acrolinx for checking and returns the Scorecard URL.
+        /// If in Batch mode, it also returns the Content Analysis Dashboard URL.
+        /// </summary>
+        public static async Task<string?> CheckWithAcrolinx(string filePath, string? batchId = null, CheckType checkType = CheckType.Automated)
+        {
+            var logger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddConsole())
+                .CreateLogger<AcrolinxService>();
+            var service = new AcrolinxService(Configuration, logger);
+            return await service.CheckWithAcrolinx(filePath, batchId, checkType);
+        }
+
+        /// <summary>
+        /// Opens a given URL in the default web browser.
+        /// </summary>
+        public static void OpenUrlInBrowser(string? url)
+        {
+            var logger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddConsole())
+                .CreateLogger<AcrolinxService>();
+            var service = new AcrolinxService(Configuration, logger);
+            service.OpenUrlInBrowser(url);
         }
     }
 }
