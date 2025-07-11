@@ -16,8 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Acrolinx.Net.Check;
@@ -27,39 +25,47 @@ using Microsoft.Extensions.Logging;
 
 namespace Acrolinx.Net.Demo
 {
+    /// <summary>
+    /// Hosted service that processes multiple files in batch mode using Acrolinx for content checking.
+    /// This service implements intelligent concurrency control to prevent API timeouts and provides
+    /// comprehensive batch reporting functionality.
+    /// </summary>
     public class BatchProcessingService : IHostedService
     {
         private readonly IAcrolinxConfiguration _configuration;
         private readonly IAcrolinxService _acrolinxService;
+        private readonly IFileProcessingService _fileProcessingService;
         private readonly ILogger<BatchProcessingService> _logger;
         private readonly IHostApplicationLifetime _hostApplicationLifetime;
 
-        // Define the supported file types based on Acrolinx documentation
-        private static readonly HashSet<string> SupportedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "xml", "xhtm", "xhtml", "svg", "resx", "xlf", "xliff", "dita", "ditamap", "ditaval",
-            "html", "htm",
-            "markdown", "mdown", "mkdn", "mkd", "md",
-            "txt",
-            "java",
-            "c", "h", "cc", "cpp", "cxx", "c++", "hh", "hpp", "hxx", "h++", "dic",
-            "yaml", "yml",
-            "properties",
-            "json"
-        };
-
+        /// <summary>
+        /// Initializes a new instance of the BatchProcessingService class.
+        /// </summary>
+        /// <param name="configuration">The Acrolinx configuration service.</param>
+        /// <param name="acrolinxService">The Acrolinx API service for content checking.</param>
+        /// <param name="fileProcessingService">The file processing service for validation and filtering.</param>
+        /// <param name="logger">The logger instance for this service.</param>
+        /// <param name="hostApplicationLifetime">The host application lifetime service for shutdown control.</param>
         public BatchProcessingService(
             IAcrolinxConfiguration configuration,
             IAcrolinxService acrolinxService,
+            IFileProcessingService fileProcessingService,
             ILogger<BatchProcessingService> logger,
             IHostApplicationLifetime hostApplicationLifetime)
         {
             _configuration = configuration;
             _acrolinxService = acrolinxService;
+            _fileProcessingService = fileProcessingService;
             _logger = logger;
             _hostApplicationLifetime = hostApplicationLifetime;
         }
 
+        /// <summary>
+        /// Starts the batch processing service. This method processes all supported files
+        /// in the configured content directory using intelligent concurrency control.
+        /// </summary>
+        /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>A task that represents the asynchronous start operation.</returns>
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             try
@@ -76,11 +82,23 @@ namespace Acrolinx.Net.Demo
             }
         }
 
+        /// <summary>
+        /// Stops the batch processing service. This method performs cleanup operations.
+        /// </summary>
+        /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>A completed task since no async operations are needed for stopping.</returns>
         public Task StopAsync(CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Processes all supported files in the configured directory in batch mode.
+        /// This method handles user input for batch ID, file discovery, concurrency control,
+        /// and result aggregation with comprehensive reporting.
+        /// </summary>
+        /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>A task that represents the asynchronous batch processing operation.</returns>
         private async Task ProcessBatchAsync(CancellationToken cancellationToken)
         {
             // Validate configuration
@@ -112,24 +130,12 @@ namespace Acrolinx.Net.Demo
                 return;
             }
 
-            // Get all files in the directory and subdirectories
-            string[] allFiles = Directory.GetFiles(directoryPath, "*", SearchOption.AllDirectories);
-            _logger.LogInformation("Found {FileCount} files in directory", allFiles.Length);
-
-            foreach (var file in allFiles)
-            {
-                _logger.LogDebug("Found file: {FilePath}", file);
-            }
-
-            // Filter files to only include supported formats
-            string[] contentFiles = allFiles
-                .Where(file => SupportedExtensions.Contains(Path.GetExtension(file).TrimStart('.').ToLower()))
-                .ToArray();
-
-            _logger.LogInformation("Found {SupportedFileCount} supported files after filtering", contentFiles.Length);
+            // Get all supported files in the directory and subdirectories
+            string[] contentFiles = _fileProcessingService.GetSupportedFiles(directoryPath, includeSubdirectories: true);
+            
             foreach (var file in contentFiles)
             {
-                _logger.LogDebug("Filtered file: {FilePath}", file);
+                _logger.LogDebug("Found supported file: {FilePath}", file);
             }
 
             if (contentFiles.Length == 0)
@@ -194,6 +200,15 @@ namespace Acrolinx.Net.Demo
             }
         }
 
+        /// <summary>
+        /// Processes a single file with throttling control to prevent API overload.
+        /// This method implements semaphore-based concurrency control and API-friendly pacing.
+        /// </summary>
+        /// <param name="filePath">The path of the file to process.</param>
+        /// <param name="batchId">The batch ID to associate with this file check.</param>
+        /// <param name="semaphore">The semaphore for controlling concurrent operations.</param>
+        /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>A task that represents the asynchronous file processing operation, returning the content analysis dashboard URL on success or null on failure.</returns>
         private async Task<string?> ProcessFileWithThrottling(string filePath, string batchId, SemaphoreSlim semaphore, CancellationToken cancellationToken)
         {
             await semaphore.WaitAsync(cancellationToken);

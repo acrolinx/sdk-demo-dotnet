@@ -57,6 +57,7 @@ namespace Acrolinx.Net.Demo
                     
                     // Register services
                     services.AddSingleton<IAcrolinxService, AcrolinxService>();
+                    services.AddSingleton<IFileProcessingService, FileProcessingService>();
                     
                     // Register the main processing service
                     services.AddHostedService<BatchProcessingService>();

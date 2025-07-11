@@ -25,23 +25,44 @@ using Microsoft.Extensions.Logging;
 
 namespace Acrolinx.Net.AutoCheck
 {
+    /// <summary>
+    /// Background service that monitors a directory for file changes and automatically
+    /// processes supported files using Acrolinx for content checking. This service provides
+    /// real-time monitoring with user interaction controls and automatic browser integration.
+    /// </summary>
     public class AutoCheckService : BackgroundService
     {
         private readonly IAcrolinxConfiguration _configuration;
         private readonly IAcrolinxService _acrolinxService;
+        private readonly IFileProcessingService _fileProcessingService;
         private readonly ILogger<AutoCheckService> _logger;
         private FileSystemWatcher? _watcher;
 
+        /// <summary>
+        /// Initializes a new instance of the AutoCheckService class.
+        /// </summary>
+        /// <param name="configuration">The Acrolinx configuration service.</param>
+        /// <param name="acrolinxService">The Acrolinx API service for content checking.</param>
+        /// <param name="fileProcessingService">The file processing service for validation and filtering.</param>
+        /// <param name="logger">The logger instance for this service.</param>
         public AutoCheckService(
             IAcrolinxConfiguration configuration,
             IAcrolinxService acrolinxService,
+            IFileProcessingService fileProcessingService,
             ILogger<AutoCheckService> logger)
         {
             _configuration = configuration;
             _acrolinxService = acrolinxService;
+            _fileProcessingService = fileProcessingService;
             _logger = logger;
         }
 
+        /// <summary>
+        /// Executes the background service to monitor file changes in the configured directory.
+        /// This method sets up a FileSystemWatcher and handles user interaction for pause/resume functionality.
+        /// </summary>
+        /// <param name="stoppingToken">A cancellation token that indicates when the service should stop.</param>
+        /// <returns>A task that represents the asynchronous execution of the service.</returns>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             // Validate configuration
@@ -61,8 +82,8 @@ namespace Acrolinx.Net.AutoCheck
 
             // Set up file system watcher
             _watcher = new FileSystemWatcher(watchPath)
-            {
-                IncludeSubdirectories = false,
+            {   // if you don't want to watch subdirectories, set IncludeSubdirectories to false
+                IncludeSubdirectories = true,
                 NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite
             };
 
@@ -106,15 +127,44 @@ namespace Acrolinx.Net.AutoCheck
             await Task.Delay(Timeout.Infinite, stoppingToken);
         }
 
-        private async void OnFileChanged(object sender, FileSystemEventArgs e)
+        /// <summary>
+        /// Event handler for file creation and modification events.
+        /// This method delegates to an async handler to prevent blocking the file system watcher.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">A FileSystemEventArgs that contains the event data.</param>
+        private void OnFileChanged(object sender, FileSystemEventArgs e)
         {
-            if (!File.Exists(e.FullPath)) return;
+            // Fire and forget - handle async operation in background
+            _ = HandleFileChangedAsync(e);
+        }
 
-            _logger.LogInformation("File {ChangeType}: {FilePath}", e.ChangeType, e.FullPath);
-            Console.WriteLine($"[AutoCheck] File {e.ChangeType}: {e.FullPath}");
-
+        /// <summary>
+        /// Handles file changed events asynchronously with proper validation and error handling.
+        /// Only processes files that are valid and supported by Acrolinx.
+        /// </summary>
+        /// <param name="e">A FileSystemEventArgs that contains the event data.</param>
+        /// <returns>A task that represents the asynchronous file change handling operation.</returns>
+        private async Task HandleFileChangedAsync(FileSystemEventArgs e)
+        {
             try
             {
+                // Validate file exists and is supported
+                if (!_fileProcessingService.IsFileValid(e.FullPath))
+                {
+                    _logger.LogDebug("File is not valid, skipping: {FilePath}", e.FullPath);
+                    return;
+                }
+
+                if (!_fileProcessingService.IsFileSupported(e.FullPath))
+                {
+                    _logger.LogDebug("File type not supported, skipping: {FilePath}", e.FullPath);
+                    return;
+                }
+
+                _logger.LogInformation("File {ChangeType}: {FilePath}", e.ChangeType, e.FullPath);
+                Console.WriteLine($"[AutoCheck] File {e.ChangeType}: {e.FullPath}");
+
                 string? scorecardUrl = await _acrolinxService.CheckWithAcrolinx(e.FullPath, checkType: CheckType.Automated);
                 if (!string.IsNullOrEmpty(scorecardUrl))
                 {
@@ -129,15 +179,44 @@ namespace Acrolinx.Net.AutoCheck
             }
         }
 
-        private async void OnFileRenamed(object sender, RenamedEventArgs e)
+        /// <summary>
+        /// Event handler for file rename events.
+        /// This method delegates to an async handler to prevent blocking the file system watcher.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">A RenamedEventArgs that contains the event data.</param>
+        private void OnFileRenamed(object sender, RenamedEventArgs e)
         {
-            if (!File.Exists(e.FullPath)) return;
+            // Fire and forget - handle async operation in background
+            _ = HandleFileRenamedAsync(e);
+        }
 
-            _logger.LogInformation("File Renamed: {OldPath} -> {NewPath}", e.OldFullPath, e.FullPath);
-            Console.WriteLine($"[AutoCheck] File Renamed: {e.OldFullPath} -> {e.FullPath}");
-
+        /// <summary>
+        /// Handles file renamed events asynchronously with proper validation and error handling.
+        /// Only processes files that are valid and supported by Acrolinx.
+        /// </summary>
+        /// <param name="e">A RenamedEventArgs that contains the event data.</param>
+        /// <returns>A task that represents the asynchronous file rename handling operation.</returns>
+        private async Task HandleFileRenamedAsync(RenamedEventArgs e)
+        {
             try
             {
+                // Validate file exists and is supported
+                if (!_fileProcessingService.IsFileValid(e.FullPath))
+                {
+                    _logger.LogDebug("Renamed file is not valid, skipping: {FilePath}", e.FullPath);
+                    return;
+                }
+
+                if (!_fileProcessingService.IsFileSupported(e.FullPath))
+                {
+                    _logger.LogDebug("Renamed file type not supported, skipping: {FilePath}", e.FullPath);
+                    return;
+                }
+
+                _logger.LogInformation("File Renamed: {OldPath} -> {NewPath}", e.OldFullPath, e.FullPath);
+                Console.WriteLine($"[AutoCheck] File Renamed: {e.OldFullPath} -> {e.FullPath}");
+
                 string? scorecardUrl = await _acrolinxService.CheckWithAcrolinx(e.FullPath, checkType: CheckType.Automated);
                 if (!string.IsNullOrEmpty(scorecardUrl))
                 {
@@ -152,6 +231,10 @@ namespace Acrolinx.Net.AutoCheck
             }
         }
 
+        /// <summary>
+        /// Disposes the AutoCheckService and releases managed resources including the FileSystemWatcher.
+        /// This method ensures proper cleanup when the service is stopped.
+        /// </summary>
         public override void Dispose()
         {
             _watcher?.Dispose();

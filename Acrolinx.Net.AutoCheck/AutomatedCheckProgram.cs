@@ -57,6 +57,7 @@ namespace Acrolinx.Net.AutoCheck
                     
                     // Register services
                     services.AddSingleton<IAcrolinxService, AcrolinxService>();
+                    services.AddSingleton<IFileProcessingService, FileProcessingService>();
                     
                     // Register the main processing service
                     services.AddHostedService<AutoCheckService>();

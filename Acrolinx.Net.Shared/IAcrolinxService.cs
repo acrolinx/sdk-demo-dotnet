@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
+using System;
 using System.Threading.Tasks;
 using Acrolinx.Net.Check;
 
 namespace Acrolinx.Net.Shared
 {
-    public interface IAcrolinxService
+    public interface IAcrolinxService : IDisposable
     {
         Task<string?> CheckWithAcrolinx(string filePath, string? batchId = null, CheckType checkType = CheckType.Automated);
         void OpenUrlInBrowser(string? url);
