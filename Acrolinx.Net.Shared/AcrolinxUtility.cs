@@ -92,6 +92,7 @@ namespace Acrolinx.Net.Shared
             try
             {
                 content = File.ReadAllText(filePath);
+                Console.WriteLine($"Successfully read file: {filePath} (Content length: {content.Length} characters)");
             }
             catch (Exception ex)
             {
@@ -102,7 +103,9 @@ namespace Acrolinx.Net.Shared
             try
             {
                 var endpoint = new AcrolinxEndpoint(AcrolinxUrl, ClientSignature);
+                Console.WriteLine($"Starting check for file: {filePath}");
                 var accessToken = await endpoint.SignInWithSSO(ApiToken, AcrolinxUsername);
+                Console.WriteLine($"Successfully signed in for file: {filePath}");
 
                 var checkRequest = new CheckRequest()
                 {
@@ -116,7 +119,15 @@ namespace Acrolinx.Net.Shared
                     Content = content
                 };
 
+                Console.WriteLine($"Sending check request for file: {filePath} (Batch ID: {batchId}, Check Type: {checkType})");
                 var checkResult = await endpoint.Check(accessToken, checkRequest);
+                Console.WriteLine($"Check request completed for file: {filePath}");
+
+                if (checkResult == null)
+                {
+                    Console.WriteLine($"WARNING: Check result is null for file: {filePath}");
+                    return null;
+                }
 
                 Console.WriteLine($"Check {checkResult.Id} completed for {filePath}: Score {checkResult.Quality.Score} ({checkResult.Quality.Status})");
 

@@ -75,11 +75,23 @@ namespace Acrolinx.Net.Demo
 
                 // Get all files in the directory and subdirectories
                 string[] allFiles = Directory.GetFiles(directoryPath, "*", SearchOption.AllDirectories);
+                
+                Console.WriteLine("\nAll files found:");
+                foreach (var file in allFiles)
+                {
+                    Console.WriteLine($"Found file: {file}");
+                }
 
                 // Filter files to only include supported formats
                 string[] contentFiles = allFiles
                     .Where(file => SupportedExtensions.Contains(Path.GetExtension(file).TrimStart('.').ToLower()))
                     .ToArray();
+
+                Console.WriteLine("\nFiles after filtering:");
+                foreach (var file in contentFiles)
+                {
+                    Console.WriteLine($"Filtered file: {file}");
+                }
 
                 if (contentFiles.Length == 0)
                 {
@@ -93,12 +105,28 @@ namespace Acrolinx.Net.Demo
                 // Process each content file
                 foreach (string file in contentFiles)
                 {
-                    Console.WriteLine($"Processing file: {file}");
-                    checkTasks.Add(AcrolinxUtility.CheckWithAcrolinx(file, batchId, CheckType.Batch));
+                    Console.WriteLine($"\nAdding file to batch check: {file}");
+                    var task = AcrolinxUtility.CheckWithAcrolinx(file, batchId, CheckType.Batch);
+                    checkTasks.Add(task);
+                    Console.WriteLine($"Task added for file: {file}");
                 }
 
+                Console.WriteLine($"\nWaiting for {checkTasks.Count} check tasks to complete...");
                 // Await all check tasks
                 var results = await Task.WhenAll(checkTasks);
+                Console.WriteLine($"All {results.Length} check tasks completed");
+
+                Console.WriteLine("\nCheck Results:");
+                for (int i = 0; i < contentFiles.Length; i++)
+                {
+                    Console.WriteLine($"File: {contentFiles[i]}");
+                    Console.WriteLine($"Result: {(results[i] != null ? "Success" : "Failed")}");
+                    if (results[i] != null)
+                    {
+                        Console.WriteLine($"URL: {results[i]}");
+                    }
+                    Console.WriteLine();
+                }
 
                 // Find the first valid Content Analysis Dashboard link
                 contentAnalysisDashboardLink = results.FirstOrDefault(result => !string.IsNullOrWhiteSpace(result));
