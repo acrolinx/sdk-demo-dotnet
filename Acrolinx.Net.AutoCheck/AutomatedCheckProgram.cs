@@ -1,5 +1,3 @@
-﻿#nullable enable
-
 /*
  * Copyright 2025-present Acrolinx GmbH
  *
@@ -16,6 +14,8 @@
  * limitations under the License.
  */
 
+#nullable enable
+
 using System;
 using System.Threading.Tasks;
 using Acrolinx.Net.Shared;
@@ -23,9 +23,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Acrolinx.Net.Demo
+namespace Acrolinx.Net.AutoCheck
 {
-    class Program
+    class AutomatedCheckProgram
     {
         static async Task Main(string[] args)
         {
@@ -60,7 +60,7 @@ namespace Acrolinx.Net.Demo
                     services.AddSingleton<IFileProcessingService, FileProcessingService>();
                     
                     // Register the main processing service
-                    services.AddHostedService<BatchProcessingService>();
+                    services.AddHostedService<AutoCheckService>();
                 });
     }
 }

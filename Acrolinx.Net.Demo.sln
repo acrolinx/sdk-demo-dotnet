@@ -5,6 +5,10 @@ VisualStudioVersion = 16.0.29418.71
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Acrolinx.Net.Demo", "Acrolinx.Net.Demo\Acrolinx.Net.Demo.csproj", "{8ABAC0D0-DB69-46C3-B3DD-D3A62EFAC60B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Acrolinx.Net.AutoCheck", "Acrolinx.Net.AutoCheck\Acrolinx.Net.AutoCheck.csproj", "{C7ACD07C-8DCA-4E3D-A5FF-EDE6B5299BC3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Acrolinx.Net.Shared", "Acrolinx.Net.Shared\Acrolinx.Net.Shared.csproj", "{C39648A9-2906-4234-907C-4F1D46E82CAE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{8ABAC0D0-DB69-46C3-B3DD-D3A62EFAC60B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8ABAC0D0-DB69-46C3-B3DD-D3A62EFAC60B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8ABAC0D0-DB69-46C3-B3DD-D3A62EFAC60B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7ACD07C-8DCA-4E3D-A5FF-EDE6B5299BC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7ACD07C-8DCA-4E3D-A5FF-EDE6B5299BC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7ACD07C-8DCA-4E3D-A5FF-EDE6B5299BC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7ACD07C-8DCA-4E3D-A5FF-EDE6B5299BC3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C39648A9-2906-4234-907C-4F1D46E82CAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C39648A9-2906-4234-907C-4F1D46E82CAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C39648A9-2906-4234-907C-4F1D46E82CAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C39648A9-2906-4234-907C-4F1D46E82CAE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
